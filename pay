@@ -1,0 +1,31 @@
+#! /usr/bin/env ruby
+require 'fileutils'
+require 'date'
+require 'json'
+
+json_file_path = File.expand_path('~') + '/.payment_log'
+
+if !File.exist?(json_file_path) then
+  FileUtils.cp('./template.json', json_file_path)
+end
+
+payment_log = open(json_file_path) do |io|
+  JSON.load(io)
+end
+
+last_id = if payment_log['log'].length > 0 then
+  payment_log['log'].max_by {|row| row['id'] }['id'].to_i
+else
+  0
+end
+
+payment_log['log'].push({
+  id: last_id + 1,
+  use: ARGV[0],
+  price: ARGV[1].to_i,
+  date: ARGV[2] || Date.today.to_s
+})
+
+open(json_file_path, 'w') do |file|
+  file.write JSON.pretty_generate(payment_log)
+end
